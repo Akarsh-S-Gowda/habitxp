@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { env } from "@/lib/env"
 
 export async function GET(req: Request) {
+  if (!env.CRON_SECRET) {
+    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 })
+  }
+  if (!env.RESEND_API_KEY) {
+    return NextResponse.json({ error: "RESEND_API_KEY not configured" }, { status: 500 })
+  }
+
   const auth = req.headers.get("authorization")
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (auth !== `Bearer ${env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -25,7 +33,7 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   if (!habits?.length) return NextResponse.json({ ok: true, sent: 0 })
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const resend = new Resend(env.RESEND_API_KEY)
   let sent = 0
 
   for (const habit of habits) {
